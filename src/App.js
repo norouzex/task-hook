@@ -1,43 +1,39 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from "react";
 
-import Tasks from './components/Tasks/Tasks';
-import NewTask from './components/NewTask/NewTask';
-
+import Tasks from "./components/Tasks/Tasks";
+import NewTask from "./components/NewTask/NewTask";
+import useHttp from "./hooks/use-http";
 function App() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [tasks, setTasks] = useState([]);
 
-  const fetchTasks = async (taskText) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(
-        'https://react-http-6b4a6.firebaseio.com/tasks.json'
-      );
+  const { isLoading, error, sendRequest: fetchTasks } = useHttp();
 
-      if (!response.ok) {
-        throw new Error('Request failed!');
-      }
-
-      const data = await response.json();
-
+  useEffect(() => {
+    const transformTasks = (tasksObj) => {
       const loadedTasks = [];
-
-      for (const taskKey in data) {
-        loadedTasks.push({ id: taskKey, text: data[taskKey].text });
+      console.log(tasksObj["results"]);
+      for (const taskKey in tasksObj["results"]) {
+        loadedTasks.push({
+          id: taskKey,
+          text: tasksObj["results"][taskKey].text,
+        });
       }
 
       setTasks(loadedTasks);
-    } catch (err) {
-      setError(err.message || 'Something went wrong!');
-    }
-    setIsLoading(false);
-  };
+    };
 
-  useEffect(() => {
-    fetchTasks();
-  }, []);
+    fetchTasks(
+      {
+        url: "https://parseapi.back4app.com/classes/tasks",
+        headers: {
+          "X-Parse-Application-Id": "cVa5RzxZ8wl3S1x5NYEjnOhD5mEQ59YMRm4HGxla",
+          "X-Parse-REST-API-Key": "SVt8YjzQNasABJ8tJk901zOBVuYldNlAd5slIfSR",
+          "Content-Type": "application/json",
+        },
+      },
+      transformTasks
+    );
+  }, [fetchTasks]);
 
   const taskAddHandler = (task) => {
     setTasks((prevTasks) => prevTasks.concat(task));
